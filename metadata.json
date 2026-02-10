@@ -1,0 +1,8 @@
+{
+  "name": "SmartLearn Portal",
+  "description": "An intelligent learning management system with AI-powered tutoring and administrative content generation tools.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
