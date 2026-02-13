@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import AdminPanel from './components/AdminPanel';
 import StudentPanel from './components/StudentPanel';
 import { UserRole, Course, Language, LocalizedText, AboutContent } from './types';
+import { supabase } from './supabaseClient';
 
 type View = 'home' | 'login' | 'admin' | 'about';
 
@@ -348,6 +349,23 @@ const safeParse = <T,>(value: string | null, fallback: T): T => {
   }
 };
 
+const addCourse = async (courseData: Course): Promise<boolean> => {
+  const { error } = await supabase.from('courses').insert([
+    {
+      name_ar: courseData.title.ar,
+      name_en: courseData.title.en
+    }
+  ]);
+
+  if (error) {
+    alert('حدث خطأ أثناء الحفظ!');
+    return false;
+  }
+
+  alert('تم الحفظ بنجاح وسيكون متاحاً على كل الأجهزة!');
+  return true;
+};
+
 const App: React.FC = () => {
   const [role, setRole] = useState<UserRole>(() =>
     localStorage.getItem(ROLE_KEY) === UserRole.ADMIN ? UserRole.ADMIN : UserRole.STUDENT
@@ -379,7 +397,11 @@ const App: React.FC = () => {
   }, [aboutContent]);
 
   const handleAddCourse = (newCourse: Course) => {
-    setCourses(prev => [newCourse, ...prev]);
+    void addCourse(newCourse).then(ok => {
+      if (ok) {
+        setCourses(prev => [newCourse, ...prev]);
+      }
+    });
   };
 
   const handleDeleteCourse = (id: string) => {
