@@ -433,6 +433,27 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const refresh = () => {
+      void loadCourses().then(remoteCourses => {
+        if (remoteCourses && remoteCourses.length) {
+          setCourses(remoteCourses);
+        }
+      });
+    };
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'courses' }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'courses' }, refresh)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'courses' }, refresh)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem(ABOUT_KEY, JSON.stringify(aboutContent));
   }, [aboutContent]);
 
