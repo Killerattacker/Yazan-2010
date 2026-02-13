@@ -366,6 +366,38 @@ const addCourse = async (courseData: Course): Promise<boolean> => {
   return true;
 };
 
+const normalizeCourse = (row: Record<string, any>): Course => {
+  const titleAr = String(row.name_ar ?? row.title_ar ?? row.title?.ar ?? '').trim();
+  const titleEn = String(row.name_en ?? row.title_en ?? row.title?.en ?? '').trim();
+  const fallbackId = (titleEn || titleAr || 'course').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+  return {
+    id: String(row.id ?? fallbackId || `course-${Date.now().toString(36)}`),
+    title: { ar: titleAr, en: titleEn },
+    description: { ar: String(row.description_ar ?? ''), en: String(row.description_en ?? '') },
+    category: { ar: String(row.category_ar ?? ''), en: String(row.category_en ?? '') },
+    lessons: Array.isArray(row.lessons) ? row.lessons : [],
+    thumbnail: String(row.thumbnail ?? ''),
+    history: { ar: String(row.history_ar ?? ''), en: String(row.history_en ?? '') },
+    facts: { ar: String(row.facts_ar ?? ''), en: String(row.facts_en ?? '') },
+    space: { ar: String(row.space_ar ?? ''), en: String(row.space_en ?? '') },
+    scientists: Array.isArray(row.scientists) ? row.scientists : [],
+    quiz: Array.isArray(row.quiz) ? row.quiz : []
+  };
+};
+
+const loadCourses = async (): Promise<Course[] | null> => {
+  const { data, error } = await supabase.from('courses').select('*');
+
+  if (error) {
+    console.error('خطأ في جلب البيانات:', error);
+    return null;
+  }
+
+  const rows = Array.isArray(data) ? data : [];
+  return rows.map(row => normalizeCourse(row));
+};
+
 const App: React.FC = () => {
   const [role, setRole] = useState<UserRole>(() =>
     localStorage.getItem(ROLE_KEY) === UserRole.ADMIN ? UserRole.ADMIN : UserRole.STUDENT
@@ -391,6 +423,14 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
   }, [courses]);
+
+  useEffect(() => {
+    void loadCourses().then(remoteCourses => {
+      if (remoteCourses && remoteCourses.length) {
+        setCourses(remoteCourses);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(ABOUT_KEY, JSON.stringify(aboutContent));
