@@ -5,6 +5,8 @@ type AdminPanelProps = {
   courses: Course[];
   lang: Language;
   aboutContent: AboutContent;
+  defaultAdminPassword: string;
+  onChangeAdminPassword: (current: string, next: string) => { ok: boolean; message: string };
   onUpdateAbout: (about: AboutContent) => void;
   onAddCourse: (course: Course) => void;
   onUpdateCourse: (course: Course) => void;
@@ -66,6 +68,8 @@ const AdminPanel = ({
   courses,
   lang,
   aboutContent,
+  defaultAdminPassword,
+  onChangeAdminPassword,
   onUpdateAbout,
   onAddCourse,
   onDeleteCourse,
@@ -75,7 +79,9 @@ const AdminPanel = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Course>(createEmptyCourse());
   const [error, setError] = useState<string | null>(null);
-  const [adminSection, setAdminSection] = useState<'courses' | 'about'>('courses');
+  const [adminSection, setAdminSection] = useState<'courses' | 'about' | 'security'>('courses');
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '' });
+  const [passwordMessage, setPasswordMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   const t = {
     ar: {
@@ -207,6 +213,14 @@ const AdminPanel = ({
     setSelectedId(null);
     setDraft(createEmptyCourse());
     setError(null);
+  };
+
+  const handlePasswordChange = () => {
+    const result = onChangeAdminPassword(passwordForm.current, passwordForm.next);
+    setPasswordMessage({ ok: result.ok, text: result.message });
+    if (result.ok) {
+      setPasswordForm({ current: '', next: '' });
+    }
   };
 
   const updateLesson = (index: number, patch: Partial<Lesson>) => {
@@ -352,6 +366,14 @@ const AdminPanel = ({
           }`}
         >
           {lang === 'ar' ? '\u062A\u0639\u062F\u064A\u0644 \u0639\u0646 \u0627\u0644\u0645\u0646\u0635\u0629' : 'Edit About page'}
+        </button>
+        <button
+          onClick={() => setAdminSection('security')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold ${
+            adminSection === 'security' ? 'btn-primary' : 'btn-outline'
+          }`}
+        >
+          {lang === 'ar' ? '\u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631' : 'Change password'}
         </button>
       </div>
 
@@ -942,6 +964,51 @@ const AdminPanel = ({
       </section>
 
       </>
+      )}
+
+      {adminSection === 'security' && (
+      <section className="soft-card rounded-3xl p-6 md:p-8 space-y-4">
+        <h3 className="text-sm font-semibold text-slate-700">
+          {lang === 'ar' ? '\u062A\u063A\u064A\u064A\u0631 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0627\u0644\u0645\u0634\u0631\u0641' : 'Admin password'}
+        </h3>
+        <p className="text-xs text-slate-500">
+          {lang === 'ar'
+            ? `\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A\u0629: ${defaultAdminPassword}`
+            : `Default password: ${defaultAdminPassword}`}
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500">
+              {lang === 'ar' ? '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629' : 'Current password'}
+            </label>
+            <input
+              type="password"
+              value={passwordForm.current}
+              onChange={e => setPasswordForm(prev => ({ ...prev, current: e.target.value }))}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#0f766e] outline-none"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500">
+              {lang === 'ar' ? '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629' : 'New password'}
+            </label>
+            <input
+              type="password"
+              value={passwordForm.next}
+              onChange={e => setPasswordForm(prev => ({ ...prev, next: e.target.value }))}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#0f766e] outline-none"
+            />
+          </div>
+        </div>
+        {passwordMessage && (
+          <div className={`text-sm px-4 py-3 rounded-xl border ${passwordMessage.ok ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-rose-600 bg-rose-50 border-rose-100'}`}>
+            {passwordMessage.text}
+          </div>
+        )}
+        <button onClick={handlePasswordChange} className="btn-primary px-6 py-3 rounded-2xl text-sm font-semibold">
+          {lang === 'ar' ? '\u062D\u0641\u0638 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631' : 'Save password'}
+        </button>
+      </section>
       )}
     </div>
   );

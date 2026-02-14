@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import Layout from './components/Layout';
 import AdminPanel from './components/AdminPanel';
 import StudentPanel from './components/StudentPanel';
-import { UserRole, Course, Language, LocalizedText, AboutContent } from './types';
-import { supabase } from './supabaseClient';
+import { UserRole, Course, Language, LocalizedText, AboutContent, QuizDifficulty, QuizQuestion } from './types';
 
 type View = 'home' | 'login' | 'admin' | 'about';
 
 const STORAGE_KEY = 'smart_learn_courses';
 const ABOUT_KEY = 'smart_learn_about';
 const ROLE_KEY = 'smart_learn_role';
+const ADMIN_PASS_KEY = 'smart_learn_admin_password';
+const DEFAULT_ADMIN_PASSWORD = 'admin';
 
 const l = (ar: string, en: string): LocalizedText => ({ ar, en });
 
@@ -337,8 +338,376 @@ const DEFAULT_COURSES: Course[] = [
         duration: '40'
       }
     ]
+  },
+  {
+    id: 'biology',
+    title: l('أحياء', 'Biology'),
+    description: l(
+      'مادة الأحياء تشرح الكائنات الحية وبنيتها ووظائفها.',
+      'Biology explains living organisms, their structure, and their functions.'
+    ),
+    category: l('علوم', 'Science'),
+    thumbnail: 'https://images.unsplash.com/photo-1530026186672-2cd00ffc50fe?auto=format&fit=crop&q=80&w=600',
+    history: l(
+      'تطورت الأحياء من الملاحظة إلى علم يعتمد على التجارب الدقيقة.',
+      'Biology evolved from observation into an experiment-driven science.'
+    ),
+    facts: l(
+      'تتكون جميع الكائنات الحية من خلايا.',
+      'All living things are made of cells.'
+    ),
+    space: l(
+      'علم الأحياء الفضائي يدرس إمكانية الحياة خارج الأرض.',
+      'Astrobiology studies the possibility of life beyond Earth.'
+    ),
+    scientists: [
+      {
+        name: l('نور الهاشمي', 'Nour Al-Hashmi'),
+        bio: l(
+          'تدرس تأثير البيئات القاسية على الخلايا.',
+          'Studies how extreme environments affect cells.'
+        ),
+        image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=200'
+      }
+    ],
+    lessons: [
+      {
+        id: 'bio-cells',
+        title: l('أساسيات الخلية', 'Cell Basics'),
+        content: l(
+          'نتعرف على مكونات الخلية ووظائف كل جزء.',
+          'We learn cell components and the role of each part.'
+        ),
+        history: l(
+          'بدأ اكتشاف الخلية مع تطور المجهر.',
+          'Cell discovery began with the development of microscopes.'
+        ),
+        facts: l(
+          'الخلية هي وحدة البناء الأساسية للحياة.',
+          'The cell is the basic unit of life.'
+        ),
+        space: l(
+          'تساعد دراسة الخلايا في فهم بقاء الإنسان في الفضاء.',
+          'Cell research helps us understand human survival in space.'
+        ),
+        scientists: [],
+        duration: '35'
+      }
+    ]
+  },
+  {
+    id: 'astronomy',
+    title: l('فلك', 'Astronomy'),
+    description: l(
+      'مادة الفلك تدرس النجوم والكواكب والمجرات.',
+      'Astronomy studies stars, planets, and galaxies.'
+    ),
+    category: l('علوم', 'Science'),
+    thumbnail: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&q=80&w=600',
+    history: l(
+      'اعتمد الفلك قديمًا على الرصد البصري ثم تطور باستخدام التلسكوبات.',
+      'Astronomy started with visual observation and advanced through telescopes.'
+    ),
+    facts: l(
+      'الضوء القادم من النجوم البعيدة يحمل معلومات عن تركيبها.',
+      'Light from distant stars reveals information about their composition.'
+    ),
+    space: l(
+      'الفلك هو المفتاح لفهم بنية الكون وتطوره.',
+      'Astronomy is key to understanding the structure and evolution of the universe.'
+    ),
+    scientists: [
+      {
+        name: l('سارة الخطيب', 'Sarah Al-Khatib'),
+        bio: l(
+          'تركز على تحليل صور المجرات.',
+          'Focuses on galaxy image analysis.'
+        ),
+        image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200'
+      }
+    ],
+    lessons: [
+      {
+        id: 'astro-stars',
+        title: l('النجوم والمجرات', 'Stars and Galaxies'),
+        content: l(
+          'نتعلم أنواع النجوم وكيف تتشكل المجرات.',
+          'We learn star types and how galaxies form.'
+        ),
+        history: l(
+          'ساهمت خرائط السماء القديمة في تأسيس علم الفلك الحديث.',
+          'Ancient sky maps laid groundwork for modern astronomy.'
+        ),
+        facts: l(
+          'درب التبانة تضم مئات المليارات من النجوم.',
+          'The Milky Way contains hundreds of billions of stars.'
+        ),
+        space: l(
+          'فهم المجرات يساعد في دراسة تاريخ الكون.',
+          'Studying galaxies helps trace the universe’s history.'
+        ),
+        scientists: [],
+        duration: '40'
+      }
+    ]
+  },
+  {
+    id: 'computer-science',
+    title: l('علوم الحاسوب', 'Computer Science'),
+    description: l(
+      'مادة علوم الحاسوب تشرح الخوارزميات والبرمجة وحل المشكلات.',
+      'Computer Science covers algorithms, programming, and problem solving.'
+    ),
+    category: l('تقنية', 'Technology'),
+    thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=600',
+    history: l(
+      'بدأت الحوسبة بآلات بسيطة وتطورت إلى أنظمة ذكية حديثة.',
+      'Computing started with simple machines and evolved into modern intelligent systems.'
+    ),
+    facts: l(
+      'الخوارزمية هي خطوات مرتبة لحل مشكلة.',
+      'An algorithm is a sequence of steps to solve a problem.'
+    ),
+    space: l(
+      'تعتمد المهمات الفضائية على البرمجيات في الملاحة والتحكم.',
+      'Space missions rely on software for navigation and control.'
+    ),
+    scientists: [
+      {
+        name: l('مروان السيد', 'Marwan Al-Sayed'),
+        bio: l(
+          'يعمل على برمجيات الأنظمة المضمنة.',
+          'Works on embedded systems software.'
+        ),
+        image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
+      }
+    ],
+    lessons: [
+      {
+        id: 'cs-algorithms',
+        title: l('مقدمة في الخوارزميات', 'Intro to Algorithms'),
+        content: l(
+          'نطبق أفكارًا بسيطة لتنظيم البيانات وحل المشكلات.',
+          'We apply basic ideas to organize data and solve problems.'
+        ),
+        history: l(
+          'تطور علم الخوارزميات مع تطور الحواسيب.',
+          'Algorithm design evolved alongside computers.'
+        ),
+        facts: l(
+          'اختيار الخوارزمية الصحيحة يوفر الوقت والموارد.',
+          'Choosing the right algorithm saves time and resources.'
+        ),
+        space: l(
+          'تحسب الخوارزميات مسارات المركبات الفضائية بدقة.',
+          'Algorithms compute spacecraft trajectories accurately.'
+        ),
+        scientists: [],
+        duration: '45'
+      }
+    ]
   }
 ];
+
+const SUBJECT_QUIZZES: Record<string, QuizQuestion[]> = {
+  chemistry: [
+    {
+      question: l('ما الذي تدرسه الكيمياء بشكل أساسي؟', 'What does chemistry primarily study?'),
+      options: [
+        l('تركيب المادة وتفاعلاتها', 'The composition of matter and its reactions'),
+        l('خرائط المجرات', 'Galaxy maps'),
+        l('قوانين المدارات فقط', 'Only orbital laws'),
+        l('تصميم البرمجيات', 'Software design')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('ما الحقيقة الصحيحة حول الذرات في التفاعلات؟', 'Which statement about atoms in reactions is correct?'),
+      options: [
+        l('تختفي الذرات تماماً', 'Atoms completely disappear'),
+        l('تتحول دائماً إلى ضوء', 'They always turn into light'),
+        l('تعاد ترتيبها دون أن تفنى', 'They are rearranged without being destroyed'),
+        l('لا دور لها في التفاعل', 'They play no role in reactions')
+      ],
+      correctAnswer: 2
+    }
+  ],
+  physics: [
+    {
+      question: l('ما الموضوع الرئيسي في الفيزياء هنا؟', 'What is a core topic of physics here?'),
+      options: [
+        l('الحركة والطاقة والجاذبية', 'Motion, energy, and gravity'),
+        l('تركيب الخلية', 'Cell structure'),
+        l('قواعد النحو', 'Grammar rules'),
+        l('تطوير الواجهات', 'UI development')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('كيف تتغير قوة الجاذبية مع المسافة؟', 'How does gravity change with distance?'),
+      options: [
+        l('تزداد دائماً', 'It always increases'),
+        l('لا تتغير', 'It does not change'),
+        l('تنخفض بقانون التربيع العكسي', 'It decreases with an inverse-square relationship'),
+        l('تختفي تماماً', 'It vanishes completely')
+      ],
+      correctAnswer: 2
+    }
+  ],
+  math: [
+    {
+      question: l('لماذا تعد الرياضيات مهمة في الفضاء؟', 'Why is mathematics important in space studies?'),
+      options: [
+        l('لحساب المدارات والمسارات', 'To calculate orbits and trajectories'),
+        l('فقط لزيادة حجم النص', 'Only to make text longer'),
+        l('لإلغاء القوانين الفيزيائية', 'To cancel physics laws'),
+        l('لا تستخدم في الفضاء', 'It is not used in space')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('ما الدور الأساسي للتفاضل والتكامل في الدرس؟', 'What is the main role of calculus in this subject?'),
+      options: [
+        l('حساب السرعة والتسارع والمسار', 'Computing velocity, acceleration, and paths'),
+        l('تغيير ألوان الواجهة', 'Changing UI colors'),
+        l('فقط لكتابة التعليقات', 'Only for writing comments'),
+        l('للترجمة بين اللغات', 'For language translation')
+      ],
+      correctAnswer: 0
+    }
+  ],
+  biology: [
+    {
+      question: l('مما تتكون جميع الكائنات الحية؟', 'What are all living organisms made of?'),
+      options: [
+        l('خلايا', 'Cells'),
+        l('أمواج ضوئية', 'Light waves'),
+        l('معادلات فقط', 'Only equations'),
+        l('صخور فضائية', 'Space rocks')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('ما المجال الذي يدرس إمكانية الحياة خارج الأرض؟', 'Which field studies possible life beyond Earth?'),
+      options: [
+        l('الأحياء الفضائية', 'Astrobiology'),
+        l('الهندسة المدنية', 'Civil engineering'),
+        l('علم الأصوات', 'Acoustics'),
+        l('علم الاقتصاد', 'Economics')
+      ],
+      correctAnswer: 0
+    }
+  ],
+  astronomy: [
+    {
+      question: l('ما الذي يدرسه علم الفلك؟', 'What does astronomy study?'),
+      options: [
+        l('النجوم والكواكب والمجرات', 'Stars, planets, and galaxies'),
+        l('بناء الجسور', 'Bridge construction'),
+        l('تشغيل الشبكات فقط', 'Only network operations'),
+        l('معالجة الصوت', 'Audio processing')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('ما المعلومة الصحيحة حول درب التبانة؟', 'Which statement about the Milky Way is correct?'),
+      options: [
+        l('تضم مئات المليارات من النجوم', 'It contains hundreds of billions of stars'),
+        l('هي كوكب واحد فقط', 'It is a single planet'),
+        l('لا تحتوي على أي نجوم', 'It contains no stars'),
+        l('توجد داخل الأرض', 'It exists inside Earth')
+      ],
+      correctAnswer: 0
+    }
+  ],
+  'computer-science': [
+    {
+      question: l('ما تعريف الخوارزمية في هذه المادة؟', 'How is an algorithm defined in this subject?'),
+      options: [
+        l('خطوات مرتبة لحل مشكلة', 'Ordered steps to solve a problem'),
+        l('لغة تصميم جرافيكي', 'A graphic design language'),
+        l('مكون مادي في الحاسوب', 'A physical computer component'),
+        l('نوع من أنواع الكواكب', 'A type of planet')
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: l('أين تُستخدم البرمجيات في سياق الفضاء؟', 'Where is software used in the space context?'),
+      options: [
+        l('في الملاحة والتحكم بالمهام', 'In mission navigation and control'),
+        l('فقط في طباعة الأوراق', 'Only for printing papers'),
+        l('لا يُستخدم ابداً', 'It is not used at all'),
+        l('في تلوين الصور فقط', 'Only for coloring images')
+      ],
+      correctAnswer: 0
+    }
+  ]
+};
+
+const QUIZ_LEVELS: QuizDifficulty[] = ['easy', 'medium', 'hard'];
+
+const HARD_SUBJECT_QUESTIONS: Record<string, QuizQuestion> = {
+  chemistry: {
+    question: l('أي وصف يعكس كيمياء الفضاء بدقة؟', 'Which description best matches astrochemistry?'),
+    options: [
+      l('تتبع الجزيئات في السدم وأغلفة الكواكب', 'Tracking molecules in nebulae and planetary atmospheres'),
+      l('حساب المدارات دون دراسة المادة', 'Calculating orbits without studying matter'),
+      l('تطوير واجهات المستخدم التعليمية', 'Building educational user interfaces'),
+      l('دراسة النحو والصرف', 'Studying grammar and morphology')
+    ],
+    correctAnswer: 0
+  },
+  physics: {
+    question: l('ما التطبيق الأقرب لما توضحه فيزياء الفضاء؟', 'Which application best reflects space physics?'),
+    options: [
+      l('تحليل مسارات الأقمار والمركبات', 'Analyzing satellite and spacecraft trajectories'),
+      l('تصنيف الخلايا الحية', 'Classifying living cells'),
+      l('تصميم الشعارات', 'Designing logos'),
+      l('إعداد قوائم الطعام', 'Preparing menu plans')
+    ],
+    correctAnswer: 0
+  },
+  math: {
+    question: l('أي مهمة تعتمد مباشرة على الرياضيات هنا؟', 'Which task directly depends on mathematics here?'),
+    options: [
+      l('نمذجة المسارات المدارية بدقة', 'Modeling orbital paths accurately'),
+      l('تلوين صور المجرات فقط', 'Only coloring galaxy images'),
+      l('تسجيل الصوت في الاستديو', 'Recording audio in studio'),
+      l('إدارة البريد الإلكتروني', 'Managing email')
+    ],
+    correctAnswer: 0
+  },
+  biology: {
+    question: l('أي سؤال يرتبط بالأحياء الفضائية؟', 'Which question is linked to astrobiology?'),
+    options: [
+      l('هل يمكن أن توجد حياة خارج الأرض؟', 'Can life exist beyond Earth?'),
+      l('ما أسرع طريقة لضغط الملفات؟', 'What is the fastest file compression method?'),
+      l('كيف نحسب تكامل المسار؟', 'How do we compute path integrals?'),
+      l('ما شكل المجرات الحلزونية؟', 'What is the shape of spiral galaxies?')
+    ],
+    correctAnswer: 0
+  },
+  astronomy: {
+    question: l('أي مصدر معلومات نستخدمه في الفلك وفق المحتوى؟', 'Which source of information is used in astronomy according to the content?'),
+    options: [
+      l('ضوء النجوم البعيدة', 'Light from distant stars'),
+      l('بيانات شبكات التواصل', 'Social media feeds'),
+      l('رسومات يدوية فقط', 'Hand sketches only'),
+      l('جداول الرواتب', 'Payroll tables')
+    ],
+    correctAnswer: 0
+  },
+  'computer-science': {
+    question: l('أي دور لعلوم الحاسوب في المهمات الفضائية؟', 'What is a CS role in space missions?'),
+    options: [
+      l('الملاحة والتحكم البرمجي', 'Software-based navigation and control'),
+      l('تحديد أنواع الصخور حيوياً', 'Biological rock classification'),
+      l('قياس شدة الضوء فقط', 'Only measuring light intensity'),
+      l('دراسة تاريخ الحضارات', 'Studying civilization history')
+    ],
+    correctAnswer: 0
+  }
+};
 
 const safeParse = <T,>(value: string | null, fallback: T): T => {
   if (!value) return fallback;
@@ -349,53 +718,34 @@ const safeParse = <T,>(value: string | null, fallback: T): T => {
   }
 };
 
-const addCourse = async (courseData: Course): Promise<boolean> => {
-  const { error } = await supabase.from('courses').insert([
-    {
-      name_ar: courseData.title.ar,
-      name_en: courseData.title.en
-    }
-  ]);
-
-  if (error) {
-    alert('حدث خطأ أثناء الحفظ!');
-    return false;
+const buildSubjectQuiz = (subjectId: string): QuizQuestion[] => {
+  const base = SUBJECT_QUIZZES[subjectId] ? [...SUBJECT_QUIZZES[subjectId]] : [];
+  if (base.length < 3 && HARD_SUBJECT_QUESTIONS[subjectId]) {
+    base.push(HARD_SUBJECT_QUESTIONS[subjectId]);
   }
-
-  alert('تم الحفظ بنجاح وسيكون متاحاً على كل الأجهزة!');
-  return true;
+  return base.map((q, idx) => ({
+    ...q,
+    difficulty: q.difficulty || QUIZ_LEVELS[Math.min(idx, QUIZ_LEVELS.length - 1)]
+  }));
 };
 
-const normalizeCourse = (row: Record<string, any>): Course => {
-  const titleAr = String(row.name_ar ?? row.title_ar ?? row.title?.ar ?? '').trim();
-  const titleEn = String(row.name_en ?? row.title_en ?? row.title?.en ?? '').trim();
-  const fallbackId = (titleEn || titleAr || 'course').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const withDefaultQuizzes = (courseList: Course[]): Course[] =>
+  courseList.map(course => ({
+    ...course,
+    quiz: SUBJECT_QUIZZES[course.id]
+      ? buildSubjectQuiz(course.id)
+      : (course.quiz || []).map((q, idx) => ({
+          ...q,
+          difficulty: q.difficulty || QUIZ_LEVELS[Math.min(idx, QUIZ_LEVELS.length - 1)]
+        }))
+  }));
 
-  return {
-    id: String(row.id ?? fallbackId || `course-${Date.now().toString(36)}`),
-    title: { ar: titleAr, en: titleEn },
-    description: { ar: String(row.description_ar ?? ''), en: String(row.description_en ?? '') },
-    category: { ar: String(row.category_ar ?? ''), en: String(row.category_en ?? '') },
-    lessons: Array.isArray(row.lessons) ? row.lessons : [],
-    thumbnail: String(row.thumbnail ?? ''),
-    history: { ar: String(row.history_ar ?? ''), en: String(row.history_en ?? '') },
-    facts: { ar: String(row.facts_ar ?? ''), en: String(row.facts_en ?? '') },
-    space: { ar: String(row.space_ar ?? ''), en: String(row.space_en ?? '') },
-    scientists: Array.isArray(row.scientists) ? row.scientists : [],
-    quiz: Array.isArray(row.quiz) ? row.quiz : []
-  };
-};
-
-const loadCourses = async (): Promise<Course[] | null> => {
-  const { data, error } = await supabase.from('courses').select('*');
-
-  if (error) {
-    console.error('خطأ في جلب البيانات:', error);
-    return null;
-  }
-
-  const rows = Array.isArray(data) ? data : [];
-  return rows.map(row => normalizeCourse(row));
+const mergeMissingDefaultSubjects = (courseList: Course[]): Course[] => {
+  const normalized = withDefaultQuizzes(courseList);
+  const existingIds = new Set(normalized.map(course => course.id));
+  const defaults = withDefaultQuizzes(DEFAULT_COURSES);
+  const missing = defaults.filter(course => !existingIds.has(course.id));
+  return missing.length ? [...normalized, ...missing] : normalized;
 };
 
 const App: React.FC = () => {
@@ -407,11 +757,15 @@ const App: React.FC = () => {
   );
   const [lang, setLang] = useState<Language>('ar');
   const [courses, setCourses] = useState<Course[]>(() =>
-    safeParse<Course[]>(localStorage.getItem(STORAGE_KEY), DEFAULT_COURSES)
+    mergeMissingDefaultSubjects(safeParse<Course[]>(localStorage.getItem(STORAGE_KEY), DEFAULT_COURSES))
   );
   const [aboutContent, setAboutContent] = useState<AboutContent>(() =>
     safeParse<AboutContent>(localStorage.getItem(ABOUT_KEY), DEFAULT_ABOUT)
   );
+  const [adminPassword, setAdminPassword] = useState<string>(() => {
+    const stored = localStorage.getItem(ADMIN_PASS_KEY);
+    return stored && stored.trim() ? stored : DEFAULT_ADMIN_PASSWORD;
+  });
   const [loginData, setLoginData] = useState({ user: '', pass: '' });
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -425,32 +779,7 @@ const App: React.FC = () => {
   }, [courses]);
 
   useEffect(() => {
-    void loadCourses().then(remoteCourses => {
-      if (remoteCourses && remoteCourses.length) {
-        setCourses(remoteCourses);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    const refresh = () => {
-      void loadCourses().then(remoteCourses => {
-        if (remoteCourses && remoteCourses.length) {
-          setCourses(remoteCourses);
-        }
-      });
-    };
-
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'courses' }, refresh)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'courses' }, refresh)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'courses' }, refresh)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    setCourses(prev => mergeMissingDefaultSubjects(prev));
   }, []);
 
   useEffect(() => {
@@ -458,11 +787,7 @@ const App: React.FC = () => {
   }, [aboutContent]);
 
   const handleAddCourse = (newCourse: Course) => {
-    void addCourse(newCourse).then(ok => {
-      if (ok) {
-        setCourses(prev => [newCourse, ...prev]);
-      }
-    });
+    setCourses(prev => [newCourse, ...prev]);
   };
 
   const handleDeleteCourse = (id: string) => {
@@ -478,7 +803,7 @@ const App: React.FC = () => {
   };
 
   const handleLogin = () => {
-    if (loginData.user.trim() === 'admin' && loginData.pass === 'admin') {
+    if (loginData.user.trim() === 'admin' && loginData.pass === adminPassword) {
       setRole(UserRole.ADMIN);
       setView('admin');
       localStorage.setItem(ROLE_KEY, UserRole.ADMIN);
@@ -487,9 +812,39 @@ const App: React.FC = () => {
     }
     setLoginError(
       lang === 'ar'
-        ? '\u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629 (admin/admin)'
-        : 'Invalid credentials (admin/admin)'
+        ? '\u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629'
+        : 'Invalid credentials'
     );
+  };
+
+  const handleAdminPasswordChange = (current: string, next: string): { ok: boolean; message: string } => {
+    if (current !== adminPassword) {
+      return {
+        ok: false,
+        message:
+          lang === 'ar'
+            ? '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062D\u0627\u0644\u064A\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629.'
+            : 'Current password is incorrect.'
+      };
+    }
+    if (!next.trim()) {
+      return {
+        ok: false,
+        message:
+          lang === 'ar'
+            ? '\u0631\u062C\u0627\u0621\u064B \u0623\u062F\u062E\u0644 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u062C\u062F\u064A\u062F\u0629.'
+            : 'Please enter a new password.'
+      };
+    }
+    setAdminPassword(next);
+    localStorage.setItem(ADMIN_PASS_KEY, next);
+    return {
+      ok: true,
+      message:
+        lang === 'ar'
+          ? '\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0628\u0646\u062C\u0627\u062D.'
+          : 'Password updated successfully.'
+    };
   };
 
   const handleLogout = () => {
@@ -624,6 +979,8 @@ const App: React.FC = () => {
           courses={courses}
           lang={lang}
           aboutContent={aboutContent}
+          defaultAdminPassword={DEFAULT_ADMIN_PASSWORD}
+          onChangeAdminPassword={handleAdminPasswordChange}
           onUpdateAbout={setAboutContent}
           onAddCourse={handleAddCourse}
           onDeleteCourse={handleDeleteCourse}

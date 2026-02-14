@@ -31,7 +31,10 @@ export interface QuizQuestion {
   question: LocalizedText;
   options: LocalizedText[];
   correctAnswer: number;
+  difficulty?: QuizDifficulty;
 }
+
+export type QuizDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface Course {
   id: string;

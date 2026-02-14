@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Course, Language, Lesson, LocalizedText } from '../types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Course, Language, Lesson, LocalizedText, QuizDifficulty } from '../types';
 
 type StudentPanelProps = {
   courses: Course[];
@@ -19,12 +19,19 @@ const summarizeText = (text: string, maxLength: number) => {
   return `${clean.slice(0, maxLength - 1)}…`;
 };
 
+const difficultyOrder: Record<QuizDifficulty, number> = {
+  easy: 0,
+  medium: 1,
+  hard: 2
+};
+
 const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
   const [activeTab, setActiveTab] = useState<TabKey>('definition');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [quizSelections, setQuizSelections] = useState<Record<string, number>>({});
   const detailsRef = useRef<HTMLDivElement | null>(null);
 
   const t = {
@@ -45,6 +52,12 @@ const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
       space: '\u0627\u0644\u0641\u0636\u0627\u0621',
       scientists: '\u0627\u0644\u0639\u0644\u0645\u0627\u0621',
       quiz: '\u0627\u062E\u062A\u0628\u0627\u0631',
+      easy: '\u0633\u0647\u0644',
+      medium: '\u0645\u062A\u0648\u0633\u0637',
+      hard: '\u0635\u0639\u0628',
+      right: '\u0635\u062D\u064A\u062D',
+      wrong: '\u062E\u0637\u0623',
+      selectAnswer: '\u0627\u062E\u062A\u0631 \u0625\u062C\u0627\u0628\u0629',
       quizEmpty: '\u0644\u0627 \u064A\u0648\u062C\u062F \u0627\u062E\u062A\u0628\u0627\u0631 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u0627\u0642 \u0628\u0639\u062F.',
       definitionTitle: '\u0627\u0644\u062A\u0639\u0631\u064A\u0641 \u0648\u0627\u0644\u0634\u0631\u062D',
       lessons: '\u0627\u0644\u062F\u0631\u0648\u0633',
@@ -74,6 +87,12 @@ const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
       space: 'Space',
       scientists: 'Scientists',
       quiz: 'Quiz',
+      easy: 'Easy',
+      medium: 'Medium',
+      hard: 'Hard',
+      right: 'Right',
+      wrong: 'Wrong',
+      selectAnswer: 'Select an answer',
       quizEmpty: 'No quiz available for this course yet.',
       definitionTitle: 'Definition & Overview',
       lessons: 'Lessons',
@@ -117,6 +136,10 @@ const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
       return matchesTerm && matchesCategory;
     });
   }, [courses, lang, searchTerm, categoryFilter]);
+
+  useEffect(() => {
+    setQuizSelections({});
+  }, [selectedCourseId, lang]);
 
   const stats = useMemo(() => {
     const lessons = courses.reduce((sum, course) => sum + (course.lessons?.length || 0), 0);
@@ -407,16 +430,55 @@ const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
                 <h3 className="text-xl font-bold text-[#0f766e]">{t.quiz}</h3>
                 {selectedCourse.quiz && selectedCourse.quiz.length ? (
                   <div className="space-y-4">
-                    {selectedCourse.quiz.map((q, idx) => (
-                      <div key={`${idx}`} className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
-                        <p className="font-semibold text-slate-800">{idx + 1}. {getText(q.question, lang)}</p>
-                        <div className="grid gap-1 text-xs text-slate-500 mt-2">
-                          {q.options.map((opt, oIdx) => (
-                            <span key={`${idx}-${oIdx}`}>• {getText(opt, lang)}</span>
-                          ))}
+                    {[...selectedCourse.quiz]
+                      .sort((a, b) => {
+                        const ad = (a.difficulty || 'medium') as QuizDifficulty;
+                        const bd = (b.difficulty || 'medium') as QuizDifficulty;
+                        return difficultyOrder[ad] - difficultyOrder[bd];
+                      })
+                      .map((q, idx) => (
+                        <div key={`${idx}`} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-semibold text-slate-800">{idx + 1}. {getText(q.question, lang)}</p>
+                            <span className="text-[11px] px-2 py-1 rounded-full bg-[#e7f6f3] text-[#0f766e] font-semibold">
+                              {q.difficulty === 'easy' ? t.easy : q.difficulty === 'hard' ? t.hard : t.medium}
+                            </span>
+                          </div>
+                          <div className="grid gap-2 text-sm">
+                            {q.options.map((opt, oIdx) => (
+                              <button
+                                key={`${idx}-${oIdx}`}
+                                onClick={() =>
+                                  setQuizSelections(prev => ({
+                                    ...prev,
+                                    [`${selectedCourse.id}-${idx}`]: oIdx
+                                  }))
+                                }
+                                className={`text-left px-3 py-2 rounded-xl border transition ${
+                                  quizSelections[`${selectedCourse.id}-${idx}`] === oIdx
+                                    ? 'border-[#0f766e] bg-[#e7f6f3] text-slate-800'
+                                    : 'border-slate-200 bg-white text-slate-600'
+                                }`}
+                              >
+                                {getText(opt, lang)}
+                              </button>
+                            ))}
+                          </div>
+                          {quizSelections[`${selectedCourse.id}-${idx}`] === undefined ? (
+                            <p className="text-xs text-slate-500">{t.selectAnswer}</p>
+                          ) : (
+                            <p
+                              className={`text-xs font-semibold ${
+                                quizSelections[`${selectedCourse.id}-${idx}`] === q.correctAnswer
+                                  ? 'text-emerald-600'
+                                  : 'text-rose-600'
+                              }`}
+                            >
+                              {quizSelections[`${selectedCourse.id}-${idx}`] === q.correctAnswer ? t.right : t.wrong}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 ) : (
                   <p className="text-slate-500">{t.quizEmpty}</p>
@@ -431,3 +493,5 @@ const StudentPanel = ({ courses, lang }: StudentPanelProps) => {
 };
 
 export default StudentPanel;
+
+
